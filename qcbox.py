@@ -537,7 +537,8 @@ def get_pair_potential(r, colloid_radius, polymer_radius, mc_step):
             retval *= -gamma*kappa_sigma*math.pow(1+q_factor,2)/math.exp(-kappa_sigma)
         if abs(r) >= 2*colloid_radius:
             retval += (2*colloid_radius/abs(r))*math.exp(-kappa_sigma*((abs(r)/(2*colloid_radius))-1))
-
+        else:
+            retval = get_pair_potential(2*colloid_radius, colloid_radius, polymer_radius, mc_step)
 
 
     #Testpotential
