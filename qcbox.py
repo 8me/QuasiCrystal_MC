@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
 class Box(object):
-    def __init__(self, density=0.8, is_eta=False, theta=1./100, width=70, height=70, periodic_boundary=True,qfactor=0.17 ):
+    def __init__(self, density=0.8, is_eta=False, theta=1./100, width=70, height=70, periodic_boundary=True,qfactor=0.17,gamma=1.61):
         #####################################
         # Simulation Properties
         #####################################
@@ -31,7 +31,8 @@ class Box(object):
             self.density = density
         else:
             self.density = self._eta_to_density(density)
-
+        # Gamma factor
+        self.gamma = gamma
         #####################################
         # Further Inits
         #####################################
@@ -86,34 +87,37 @@ class Box(object):
         triangle_distance = 0.69*(2*self.colloid_radius)*math.sqrt(math.pi/(math.sqrt(3)*self.density))
         square_distance = self.colloid_radius*math.sqrt(math.pi/self.density)
         #print(triangle_distance)
-        # for i in range(self.particle_positions.shape[0]):
-        #    self.particle_positions[i,0] = x
-        #    self.particle_positions[i,1] = y
-        #    x += triangle_distance
-        #    if x > self.width-self.colloid_radius:
-        #        line_number += 1
-        #        x = self.colloid_radius
-        #        if line_number%2==1:
-        #            x += 0.5*triangle_distance
-        #        y += math.sqrt(3)*0.5*triangle_distance
+        if False:
+            for i in range(self.particle_positions.shape[0]):
+                self.particle_positions[i,0] = x
+                self.particle_positions[i,1] = y
+                x += triangle_distance
+                if x > self.width-self.colloid_radius:
+                    line_number += 1
+                    x = self.colloid_radius
+                    if line_number%2==1:
+                        x += 0.5*triangle_distance
+                    y += math.sqrt(3)*0.5*triangle_distance
 
 
         #Fourfold tiling
-        #x = self.colloid_radius
-        #y = self.colloid_radius
-        #line_number = 0
-        #for i in range(self.particle_positions.shape[0]):
-        #    self.particle_positions[i,0] = x
-        #    self.particle_positions[i,1] = y
-        #    x += square_distance
-        #    if x > self.width-self.colloid_radius:
-        #        line_number += 1
-        #        x = self.colloid_radius
-        #        y += square_distance
+        if True:
+            x = self.colloid_radius
+            y = self.colloid_radius
+            #line_number = 0
+            for i in range(self.particle_positions.shape[0]):
+                self.particle_positions[i,0] = x
+                self.particle_positions[i,1] = y
+                x += square_distance
+                if x > self.width-self.colloid_radius:
+                    line_number += 1
+                    x = self.colloid_radius
+                    y += square_distance
 
         # Random
-        for i in range(self.particle_positions.shape[0]):
-            self.particle_positions[i] = self._create_new_global_particle_position()
+        if False:
+            for i in range(self.particle_positions.shape[0]):
+                self.particle_positions[i] = self._create_new_global_particle_position()
 
 
     def _has_particles_around(self, x, y, r):
@@ -182,7 +186,8 @@ class Box(object):
                                                 used_particle_number,
                                                 self.width,
                                                 self.height,
-                                                self.periodic_boundary)
+                                                self.periodic_boundary,
+                                                self.gamma)
         self.particle_positions[used_particle_number] = self._create_new_particle_position(xold, yold)
         new_system_energy = calculate_potential(self.particle_positions,
                                                 self.colloid_radius,
@@ -191,7 +196,8 @@ class Box(object):
                                                 used_particle_number,
                                                 self.width,
                                                 self.height,
-                                                self.periodic_boundary)
+                                                self.periodic_boundary,
+                                                self.gamma)
 
         if old_system_energy-new_system_energy > 0:
             dblProb = 1
@@ -274,7 +280,7 @@ class Box(object):
         ax.set_xlim([0, 6*self.colloid_radius])
         ax.set_ylim([-1, 5])
         for i in range(len(x)):
-            y[i] = get_pair_potential(x[i],self.colloid_radius, self.polymer_radius, self.step_number)
+            y[i] = get_pair_potential(x[i],self.colloid_radius, self.polymer_radius, self.step_number, self.gamma)
             #y[i] *= 2
             #y[i] *= self.beta
         ax.plot(x, y)
@@ -465,7 +471,7 @@ class Box(object):
 
 
 @nb.jit
-def calculate_potential(pos, colloid_radius, polymer_radius, mc_step, used_particle_number, width, height, periodic_boundary):
+def calculate_potential(pos, colloid_radius, polymer_radius, mc_step, used_particle_number, width, height, periodic_boundary, gamma):
     retval = 0
     i = used_particle_number
 
@@ -487,7 +493,7 @@ def calculate_potential(pos, colloid_radius, polymer_radius, mc_step, used_parti
                     deltax = width - deltax
                 if deltay > height/2:
                     deltay = height - deltay
-            retval += get_pair_potential(np.hypot(deltax, deltay), colloid_radius, polymer_radius, mc_step)
+            retval += get_pair_potential(np.hypot(deltax, deltay), colloid_radius, polymer_radius, mc_step, gamma)
     return retval
 
 @nb.jit
@@ -508,20 +514,20 @@ def get_unit_cell_angles(unit_cell_point,unit_cell_vertices):
     return unit_cell_angles
 
 @nb.jit
-def get_pair_potential(r, colloid_radius, polymer_radius, mc_step):
+def get_pair_potential(r, colloid_radius, polymer_radius, mc_step, gamma):
     retval = 0
     # Helper variables
     q_factor = polymer_radius/colloid_radius
     kappa_sigma = 0.9#1./(1+q_factor)
     golden_section = (1+math.sqrt(5))/2.
-    gamma = 1.610
+    #gamma = 1.610
 
     # Dotera, Oshiro, Ziherl
     if False and abs(r) < 2*1.62*colloid_radius:
         retval = 1
 
     #Pentrose
-    if True:
+    if False:
         if abs(r) < 2*golden_section*colloid_radius:
             retval = 1
         elif abs(r) < 2*math.pow(golden_section,2)*colloid_radius:
@@ -529,16 +535,17 @@ def get_pair_potential(r, colloid_radius, polymer_radius, mc_step):
         #elif abs(r) < 2*math.pow(golden_section,3)*colloid_radius:
         #    retval = 2
     # Sandbrink
-    if False:
+    if True:
         if abs(r) >= 2*colloid_radius and abs(r) <= 2*(polymer_radius+colloid_radius):
             retval += 1
             retval -= 3*abs(r)/(4*(1+q_factor)*colloid_radius)
             retval += 0.5*math.pow(abs(r)/(2*(1+q_factor)*colloid_radius),3)
             retval *= -gamma*kappa_sigma*math.pow(1+q_factor,2)/math.exp(-kappa_sigma)
+            retval /= 2*colloid_radius
         if abs(r) >= 2*colloid_radius:
             retval += (2*colloid_radius/abs(r))*math.exp(-kappa_sigma*((abs(r)/(2*colloid_radius))-1))
         else:
-            retval = get_pair_potential(2*colloid_radius, colloid_radius, polymer_radius, mc_step)
+            retval = get_pair_potential(2*colloid_radius, colloid_radius, polymer_radius, mc_step, gamma)
 
 
     #Testpotential
