@@ -10,11 +10,12 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
 class Box(object):
-    def __init__(self, density=0.8, is_eta=False, theta=1./100, width=70, height=70, periodic_boundary=True,qfactor=0.17,gamma=1.61):
+    def __init__(self, density=0.8, is_eta=False, theta=1./100, width=70, height=70, periodic_boundary=True,qfactor=0.17,gamma=1.61, tiling_type=0):
         #####################################
         # Simulation Properties
         #####################################
         self.periodic_boundary = periodic_boundary
+        self.tiling_type = tiling_type
         #####################################
         # NVT ensemble (canonical)
         #####################################
@@ -87,7 +88,7 @@ class Box(object):
         triangle_distance = 0.69*(2*self.colloid_radius)*math.sqrt(math.pi/(math.sqrt(3)*self.density))
         square_distance = self.colloid_radius*math.sqrt(math.pi/self.density)
         #print(triangle_distance)
-        if False:
+        if self.tiling_type == 0:
             for i in range(self.particle_positions.shape[0]):
                 self.particle_positions[i,0] = x
                 self.particle_positions[i,1] = y
@@ -101,7 +102,7 @@ class Box(object):
 
 
         #Fourfold tiling
-        if True:
+        elif self.tiling_type == 1:
             x = self.colloid_radius
             y = self.colloid_radius
             #line_number = 0
@@ -115,7 +116,7 @@ class Box(object):
                     y += square_distance
 
         # Random
-        if False:
+        elif self.tiling_type == 2:
             for i in range(self.particle_positions.shape[0]):
                 self.particle_positions[i] = self._create_new_global_particle_position()
 
@@ -236,8 +237,8 @@ class Box(object):
         retval &= y < (self.height-boundary_distance)
         return retval
 
-    def display(self, update_additional=False):
-        self.display_lattice()
+    def display(self, update_additional=False, filename=None):
+        self.display_lattice(filename=filename)
         if update_additional:
             if self.fig == None:
                 self.fig, self.axis = plt.subplots(2, 1)
@@ -246,7 +247,7 @@ class Box(object):
             #self.display_reciprocal_space()
         plt.tight_layout()
 
-    def display_lattice(self):
+    def display_lattice(self,filename=None):
         figure = self.main_fig
         ax  = self.main_axis
         ax.clear()
@@ -258,6 +259,8 @@ class Box(object):
         ax.set_xlim([0, self.width])
         ax.set_ylim([0, self.height])
         figure.gca().set_aspect("equal")
+        if filename is not None:
+            plt.savefig(filename)
         plt.draw()
         plt.pause(0.0001)
 

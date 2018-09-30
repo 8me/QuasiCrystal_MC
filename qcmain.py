@@ -20,6 +20,7 @@ if __name__ == "__main__":
     qfactor = 0.17
     gamma = 1.61
     periodic_boundary = False
+    tiling_type = 0
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input')
     parser.add_argument('-o', '--output')
@@ -33,6 +34,7 @@ if __name__ == "__main__":
     parser.add_argument('-q', '--qfactor')
     parser.add_argument('-g', '--gamma')
     parser.add_argument('-b', '--periodicboundary', action='store_true')
+    parser.add_argument('-s', '--structue')
     args = parser.parse_args()
 
     if args.theta:
@@ -53,8 +55,10 @@ if __name__ == "__main__":
         periodic_boundary = True
     if args.gamma:
         gamma = float(args.gamma)
+    if args.structure:
+        tiling_type = int(args.structure)
 
-    medium = qcbox.Box(density,is_eta,theta,width,height,periodic_boundary,qfactor,gamma)
+    medium = qcbox.Box(density,is_eta,theta,width,height,periodic_boundary,qfactor,gamma,tiling_type)
     if args.input:
         medium.read_particle_positions_from_file(str(args.input))
     #medium.write_particle_positions_to_file("./test.txt")
@@ -68,18 +72,20 @@ if __name__ == "__main__":
     medium.display(False)
 
     for i in trange(int(mc_steps)):
+        try:
     #     #with kp.time.Timer('mc_step'):
-        medium.execute_mc_step()
+            medium.execute_mc_step()
     #     print(" ",i,end='\r')
     #     # sys.stdout.flush()
     #     if i%1000==0:
     #         medium.display(False)
-        if i%1000==0:
-            medium.display(False)
-
+            if i%1000==0:
+                medium.display(False)
+        except KeyboardInterrupt:
+            break
     #
     #
-    medium.display(True)
+    medium.display(True,"test.pdf")
 
     if args.anglefile:
         angle_file = str(args.input)
