@@ -34,7 +34,7 @@ if __name__ == "__main__":
     parser.add_argument('-q', '--qfactor')
     parser.add_argument('-g', '--gamma')
     parser.add_argument('-b', '--periodicboundary', action='store_true')
-    parser.add_argument('-s', '--structue')
+    parser.add_argument('-s', '--structure')
     args = parser.parse_args()
 
     if args.theta:
