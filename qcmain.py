@@ -69,7 +69,7 @@ if __name__ == "__main__":
     print("Particle Amount:\t{}".format(medium.total_particle_number))
     print("Beta-Factor:\t{}".format(medium.beta))
 
-    medium.display(False)
+    medium.display(True,"test.pdf")
 
     for i in trange(int(mc_steps)):
         try:
@@ -85,7 +85,7 @@ if __name__ == "__main__":
             break
     #
     #
-    medium.display(True,"test.pdf")
+    medium.display(False)
 
     if args.anglefile:
         angle_file = str(args.input)
